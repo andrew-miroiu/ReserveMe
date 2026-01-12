@@ -1,0 +1,11 @@
+com\example\demo\reservation\Reservation.class
+com\example\demo\spaces\SpaceService.class
+com\example\demo\reservation\CreateReservationRequest.class
+com\example\demo\reservation\ReservationController.class
+com\example\demo\spaces\CreateSpaceRequest.class
+com\example\demo\spaces\SpaceController.class
+com\example\demo\Application.class
+com\example\demo\HelloController.class
+com\example\demo\reservation\ReservationService.class
+com\example\demo\spaces\Space.class
+com\example\demo\config\CorsConfig.class
