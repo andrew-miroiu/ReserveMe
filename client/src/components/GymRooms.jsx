@@ -108,11 +108,14 @@ function GymRooms({ onBack, isAdmin, user }) {
       ) : (
         <div className="spaces-grid">
           {spaces.map((space) => (
-            <div 
-              key={space.id} 
-              className="space-card"
-              onClick={() => setSelectedSpace(space)}
-              style={{ cursor: 'pointer' }}
+            <div
+              key={space.id}
+              className={`space-card ${!space.available ? 'disabled' : ''}`}
+              onClick={() => {
+                if (!space.available) return
+                setSelectedSpace(space)
+              }}
+              style={{ cursor: space.available ? 'pointer' : 'not-allowed' }}
             >
               <div className="space-header">
                 <h3>{space.name}</h3>
