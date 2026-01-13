@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.UUID;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/reservations")
@@ -45,4 +47,41 @@ public class ReservationController {
                     .body("Error: " + e.getMessage());
         }
     }
+
+    @GetMapping("/by-date")
+    public ResponseEntity<?> getReservationsByDate(
+            @RequestParam UUID spaceId,
+            @RequestParam String date // yyyy-MM-dd
+    ) {
+        try {
+            return ResponseEntity.ok(
+                    reservationService.getReservationsForDate(spaceId, date)
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching reservations: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/my-reservations")
+    public ResponseEntity<?> getMyFutureReservations(@RequestParam UUID userId) {
+        try {
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User ID is required");
+            }
+
+            List<ReservationWithSpaceName> reservations = reservationService.getFutureReservationsForUser(userId);
+            return ResponseEntity.ok(reservations);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching user's future reservations: " + e.getMessage());
+        }
+    }
+
+
+
 }

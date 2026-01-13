@@ -1,12 +1,14 @@
 F:\Proiect Java Final\server\src\main\java\com\example\demo\reservation\CreateReservationRequest.java
 F:\Proiect Java Final\server\src\main\java\com\example\demo\config\CorsConfig.java
-F:\Proiect Java Final\server\src\main\java\com\example\demo\spaces\Space.java
 F:\Proiect Java Final\server\src\main\java\com\example\demo\spaces\SpaceService.java
-F:\Proiect Java Final\server\src\main\java\com\example\demo\Application.java
 F:\Proiect Java Final\server\src\main\java\com\example\demo\config\CustomLocalDateTimeDeserializer.java
 F:\Proiect Java Final\server\src\main\java\com\example\demo\reservation\ReservationService.java
 F:\Proiect Java Final\server\src\main\java\com\example\demo\spaces\CreateSpaceRequest.java
 F:\Proiect Java Final\server\src\main\java\com\example\demo\spaces\SpaceController.java
-F:\Proiect Java Final\server\src\main\java\com\example\demo\HelloController.java
+F:\Proiect Java Final\server\src\main\java\com\example\demo\reservation\ReservationsByDateRequest.java
 F:\Proiect Java Final\server\src\main\java\com\example\demo\reservation\Reservation.java
 F:\Proiect Java Final\server\src\main\java\com\example\demo\reservation\ReservationController.java
+F:\Proiect Java Final\server\src\main\java\com\example\demo\spaces\Space.java
+F:\Proiect Java Final\server\src\main\java\com\example\demo\Application.java
+F:\Proiect Java Final\server\src\main\java\com\example\demo\reservation\ReservationWithSpaceName.java
+F:\Proiect Java Final\server\src\main\java\com\example\demo\HelloController.java

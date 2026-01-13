@@ -2,6 +2,7 @@ package com.example.demo.reservation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -13,10 +14,14 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -130,4 +135,96 @@ public class ReservationService {
             return null;
         }
     }
+
+    public List<Reservation> getReservationsForDate(UUID spaceId, String dateStr) {
+    try {
+        LocalDate date = LocalDate.parse(dateStr);
+
+        OffsetDateTime startOfDay = date.atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endOfDay = date.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+
+        String url = supabaseUrl +
+                "/rest/v1/reservations" +
+                "?space_id=eq." + spaceId +
+                "&start_time=gte." + startOfDay +
+                "&start_time=lt." + endOfDay +
+                "&select=*";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("apikey", supabaseServiceKey);
+        headers.set("Authorization", "Bearer " + supabaseServiceKey);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<String> response =
+                restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+
+        JsonNode jsonArray = objectMapper.readTree(response.getBody());
+
+        List<Reservation> reservations = new ArrayList<>();
+
+        if (jsonArray.isArray()) {
+            for (JsonNode node : jsonArray) {
+                reservations.add(mapJsonToReservation(node));
+            }
+        }
+
+        return reservations;
+
+    } catch (Exception e) {
+        throw new RuntimeException("Failed to fetch reservations", e);
+        }
+    }
+
+    public List<ReservationWithSpaceName> getFutureReservationsForUser(UUID userId) {
+    try {
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+
+        // Join cu tabela spaces pentru a aduce numele
+        String url = supabaseUrl +
+                "/rest/v1/reservations" +
+                "?user_id=eq." + userId +
+                "&start_time=gte." + now +
+                "&select=*,spaces(name)"; // aici facem join cu spaces și selectăm name
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("apikey", supabaseServiceKey);
+        headers.set("Authorization", "Bearer " + supabaseServiceKey);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+
+        JsonNode jsonArray = objectMapper.readTree(response.getBody());
+        List<ReservationWithSpaceName> reservations = new ArrayList<>();
+
+        if (jsonArray.isArray()) {
+            for (JsonNode node : jsonArray) {
+                ReservationWithSpaceName res = new ReservationWithSpaceName();
+                res.setId(UUID.fromString(node.get("id").asText()));
+                res.setUserId(UUID.fromString(node.get("user_id").asText()));
+                res.setSpaceId(UUID.fromString(node.get("space_id").asText()));
+                
+                // Setăm numele spațiului
+                if (node.has("spaces") && node.get("spaces").has("name")) {
+                    res.setSpaceName(node.get("spaces").get("name").asText());
+                } else {
+                    res.setSpaceName("Unknown");
+                }
+
+                res.setStartTime(parseDateTime(node.get("start_time").asText()));
+                res.setEndTime(parseDateTime(node.get("end_time").asText()));
+                res.setCreatedAt(parseDateTime(node.get("created_at").asText()));
+                if (node.has("notes")) res.setNotes(node.get("notes").asText());
+
+                reservations.add(res);
+            }
+        }
+
+        return reservations;
+
+    } catch (Exception e) {
+        throw new RuntimeException("Failed to fetch user's future reservations", e);
+    }
+    }
+
 }

@@ -3,6 +3,7 @@ import './Rooms.css'
 import StudyRooms from '../components/StudyRooms'
 import GymRooms from '../components/GymRooms'
 import CreateSpaceForm from '../components/CreateSpaceForm'
+import MyReservations from '../components/MyReservations' // ← componenta pentru rezervări (poți crea un placeholder)
 import { supabase } from '../lib/supabase'
 
 function Rooms({ user, onLogout }) {
@@ -10,6 +11,7 @@ function Rooms({ user, onLogout }) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showMyReservations, setShowMyReservations] = useState(false) // ← pentru My Reservations
 
   const userName = user?.user_metadata?.name || user?.email || 'User'
 
@@ -45,34 +47,15 @@ function Rooms({ user, onLogout }) {
     }
   }
 
-  const handleStudyRoomsClick = () => {
-    setActiveView('study')
-  }
+  const handleStudyRoomsClick = () => setActiveView('study')
+  const handleGymRoomsClick = () => setActiveView('gym')
+  const handleBack = () => setActiveView(null)
+  const handleCreateSuccess = () => setShowCreateForm(false)
 
-  const handleGymRoomsClick = () => {
-    setActiveView('gym')
-  }
-
-  const handleBack = () => {
-    setActiveView(null)
-  }
-
-  const handleCreateSuccess = () => {
-    setShowCreateForm(false)
-    // Optionally refresh the spaces list or show a success message
-  }
-
-  if (activeView === 'study') {
-    return <StudyRooms onBack={handleBack} isAdmin={isAdmin} user={user} />
-  }
-
-  if (activeView === 'gym') {
-    return <GymRooms onBack={handleBack} isAdmin={isAdmin} user={user} />
-  }
-
-  if (showCreateForm) {
-    return <CreateSpaceForm onBack={() => setShowCreateForm(false)} onSuccess={handleCreateSuccess} />
-  }
+  if (activeView === 'study') return <StudyRooms onBack={handleBack} isAdmin={isAdmin} user={user} />
+  if (activeView === 'gym') return <GymRooms onBack={handleBack} isAdmin={isAdmin} user={user} />
+  if (showCreateForm) return <CreateSpaceForm onBack={() => setShowCreateForm(false)} onSuccess={handleCreateSuccess} />
+  if (showMyReservations) return <MyReservations onBack={() => setShowMyReservations(false)} user={user} />
 
   return (
     <div className="rooms-container">
@@ -89,6 +72,9 @@ function Rooms({ user, onLogout }) {
               Add Space
             </button>
           )}
+          <button onClick={() => setShowMyReservations(true)} className="my-reservations-button">
+            My Reservations
+          </button>
           <button onClick={onLogout} className="logout-button">
             Logout
           </button>

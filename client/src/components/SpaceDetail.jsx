@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './SpaceDetail.css'
 
 function SpaceDetail({ space, onBack, user }) {
@@ -7,6 +7,7 @@ function SpaceDetail({ space, onBack, user }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
+  const [bookedSlots, setBookedSlots] = useState([]) // ← aici ținem orele ocupate
 
   // Generate time slots from 8 AM to 10 PM (22:00)
   const timeSlots = []
@@ -19,6 +20,39 @@ function SpaceDetail({ space, onBack, user }) {
       label: timeLabel
     })
   }
+
+  // Fetch booked slots when selectedDate changes
+  useEffect(() => {
+    if (!selectedDate) {
+      setBookedSlots([])
+      return
+    }
+
+    const fetchBookedSlots = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/reservations/by-date?spaceId=${space.id}&date=${selectedDate}`
+        )
+        if (!response.ok) throw new Error('Failed to fetch reservations')
+        const reservations = await response.json()
+        // Convert reservations to array of booked hours
+        const hours = reservations.map(r => {
+          const startHour = new Date(r.startTime).getUTCHours()
+          const endHour = new Date(r.endTime).getUTCHours()
+          const range = []
+          for (let h = startHour; h < endHour; h++) range.push(h)
+          return range
+        }).flat()
+        setBookedSlots(hours)
+      } catch (err) {
+        console.error('Error fetching reservations:', err)
+        setError('Failed to load booked slots')
+      }
+    }
+
+    fetchBookedSlots()
+    setSelectedTimeSlot(null) // Reset selected slot when date changes
+  }, [selectedDate, space.id])
 
   const handleReserve = async () => {
     if (!selectedDate) {
@@ -39,23 +73,19 @@ function SpaceDetail({ space, onBack, user }) {
       setError(null)
       setSuccess(false)
 
-      // Construct startTime and endTime from selected date and time slot
-      // Time slot is the hour (8-22), so endTime is startTime + 1 hour
       const [year, month, day] = selectedDate.split('-').map(Number)
 
       const startDateTime = new Date(Date.UTC(
         year,
-        month - 1,           // lunile sunt 0-based
+        month - 1,
         day,
-        selectedTimeSlot,    // ORA EXACTĂ pe care o apeși
+        selectedTimeSlot,
         0,
         0
       ))
 
       const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000)
 
-
-      // Format as ISO 8601 strings
       const startTime = startDateTime.toISOString()
       const endTime = endDateTime.toISOString()
 
@@ -67,8 +97,8 @@ function SpaceDetail({ space, onBack, user }) {
         body: JSON.stringify({
           userId: user.id,
           spaceId: space.id,
-          startTime: startTime,
-          endTime: endTime,
+          startTime,
+          endTime,
           notes: null
         })
       })
@@ -85,7 +115,8 @@ function SpaceDetail({ space, onBack, user }) {
       }
 
       setSuccess(true)
-      // Reset form after successful reservation
+      // Refresh booked slots to reflect new reservation
+      setBookedSlots(prev => [...prev, selectedTimeSlot])
       setTimeout(() => {
         setSelectedDate('')
         setSelectedTimeSlot(null)
@@ -100,7 +131,6 @@ function SpaceDetail({ space, onBack, user }) {
     }
   }
 
-  // Get today's date in YYYY-MM-DD format for min attribute
   const today = new Date().toISOString().split('T')[0]
 
   return (
@@ -146,10 +176,7 @@ function SpaceDetail({ space, onBack, user }) {
                 type="date"
                 id="reservation-date"
                 value={selectedDate}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value)
-                  setSelectedTimeSlot(null) // Reset time slot when date changes
-                }}
+                onChange={(e) => setSelectedDate(e.target.value)}
                 min={today}
                 required
               />
@@ -160,31 +187,34 @@ function SpaceDetail({ space, onBack, user }) {
             <div className="time-selection">
               <label>Select Time Slot *</label>
               <div className="time-slots-grid">
-                {timeSlots.map((slot) => (
-                  <button
-                    key={slot.value}
-                    type="button"
-                    className={`time-slot-button ${selectedTimeSlot === slot.value ? 'selected' : ''}`}
-                    onClick={() => {setSelectedTimeSlot(slot.value)
-                      console.log(selectedTimeSlot)
-                    }}
-                    disabled={loading}
-                  >
-                    {slot.label}
-                  </button>
-                ))}
+                {timeSlots.map((slot) => {
+                  const isBooked = bookedSlots.includes(slot.value)
+                  return (
+                    <button
+                      key={slot.value}
+                      type="button"
+                      className={`time-slot-button ${selectedTimeSlot === slot.value ? 'selected' : ''} ${isBooked ? 'booked' : ''}`}
+                      onClick={() => setSelectedTimeSlot(slot.value)}
+                      disabled={isBooked || loading}
+                      style={{
+                        backgroundColor: isBooked ? '#ccc' : (selectedTimeSlot === slot.value ? '#4caf50' : '#fff'),
+                        cursor: isBooked ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {slot.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
 
           {error && (
-            <div className="error-message" style={{ color: '#e74c3c', marginTop: '1rem', padding: '0.5rem', backgroundColor: '#fee', borderRadius: '4px' }}>
-              {error}
-            </div>
+            <div className="error-message">{error}</div>
           )}
 
           {success && (
-            <div className="success-message" style={{ color: '#27ae60', marginTop: '1rem', padding: '0.5rem', backgroundColor: '#dfe', borderRadius: '4px' }}>
+            <div className="success-message">
               Reservation created successfully! Redirecting...
             </div>
           )}
