@@ -17,27 +17,31 @@ function MyReservations({ user, onBack }) {
 
   const fetchReservations = async () => {
     try {
-      setLoading(true)
-      setError(null)
+        setLoading(true)
+        setError(null)
 
-      const response = await fetch(
+        const response = await fetch(
         `http://localhost:8080/api/reservations/my-reservations?userId=${user.id}`
-      )
+        )
 
-      if (!response.ok) {
+        if (!response.ok) {
         const errData = await response.json()
         throw new Error(errData || 'Failed to fetch reservations')
-      }
+        }
 
-      const data = await response.json()
-      setReservations(data)
+        const data = await response.json()
+
+        // Sort by startTime ascending
+        data.sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
+
+        setReservations(data)
     } catch (err) {
-      console.error('Error fetching reservations:', err)
-      setError(err.message)
+        console.error('Error fetching reservations:', err)
+        setError(err.message)
     } finally {
-      setLoading(false)
+        setLoading(false)
     }
-  }
+    }
 
   const formatDateTime = (isoString) => {
     const date = new Date(isoString)
